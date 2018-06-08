@@ -96,6 +96,11 @@ namespace dotnet_do
                 return;
             }
 
+            if (tools.Count > 0)
+            {
+                WriteLine($"Installing tools: {tools.Count}");
+                WriteLine($"Installing to: {ToolPath}");
+            }
             foreach (var t in tools)
             {
                 var tool = t.Value;
