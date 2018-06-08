@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using System.Linq;
+using static System.Console;
 
 namespace dotnet_do
 {
@@ -26,10 +26,9 @@ namespace dotnet_do
 
         public void Run(string[] args)
         {
-            var dir = _dir;
             var exePath = string.Empty;
             var exeName = args[0];
-            do
+            foreach (var dir in EnumerateDirectoriesUp(_dir))
             {
                 var toolPath = Path.Combine(dir.FullName, TOOLS_DIRECTORY_NAME);
                 var toolsInstallExist = Directory.Exists(toolPath);
@@ -38,21 +37,24 @@ namespace dotnet_do
                     exePath = Path.Combine(toolPath, exeName);
                     break;
                 }
-
-                dir = dir.Parent;
-
-            } while (dir != null);
+            }
 
             string argsString = string.Empty;
             if (args.Length >1)
             {
-                var argSpan = new Span<string>(args, 1, args.Length);
+                var argSpan = new Span<string>(args, 1, args.Length-1);
                 argsString = String.Join(' ', argSpan.ToArray());
             }
 
             if (exePath != string.Empty)
             {
-                Process.Start(exePath,argsString);
+                var startinfo = new ProcessStartInfo();
+                startinfo.RedirectStandardOutput = true;
+                startinfo.FileName = exePath;
+                startinfo.Arguments = argsString;
+                var process = Process.Start(startinfo);
+                var output = process.StandardOutput.ReadToEnd();
+                WriteLine(output);
             }
             else
             {
@@ -63,11 +65,9 @@ namespace dotnet_do
 
         public void Install()
         {
-            var dir = _dir;
-
             tools = new Dictionary<string, Tool>();
 
-            do
+            foreach(var dir in EnumerateDirectoriesUp(_dir))
             {
                 var toolPath = Path.Combine(dir.FullName, TOOLS_LIST_FILENAME);
                 var toolsListExist = File.Exists(toolPath);
@@ -88,10 +88,7 @@ namespace dotnet_do
                         }
                     }
                 }
-
-                dir = dir.Parent;
-
-            } while (dir != null);
+            }
 
             if (tools.Keys.Count == 0)
             {
@@ -105,8 +102,37 @@ namespace dotnet_do
                 var toolString = string.IsNullOrWhiteSpace(tool.Version) ? $"{tool.Name}" : $"{tool.Name} --version {tool.Version}";
                 var toolPath = Path.Combine(ToolPath, TOOLS_DIRECTORY_NAME);
                 var toolInstallParams = $"tool install --tool-path {toolPath} {toolString}";
-                Process.Start("dotnet", toolInstallParams);
+                var process = Process.Start("dotnet", toolInstallParams);
+                process.WaitForExit();
             }
+        }
+
+        public void Clean()
+        {
+            foreach (var dir in EnumerateDirectoriesUp(_dir))
+            {
+                var toolPath = Path.Combine(dir.FullName, TOOLS_DIRECTORY_NAME);
+                var toolsInstallExist = Directory.Exists(toolPath);
+                if (toolsInstallExist)
+                {
+                    WriteLine($"Deleting: {toolPath}");
+                    Directory.Delete(toolPath,true);
+                }
+            }
+        }
+
+        public void Print()
+        {
+            foreach (var dir in EnumerateDirectoriesUp(_dir))
+            {
+                var toolPath = Path.Combine(dir.FullName, TOOLS_LIST_FILENAME);
+                var toolsListExist = File.Exists(toolPath);
+                if (toolsListExist)
+                {
+                    WriteLine(toolPath);
+                }
+            }
+
         }
 
         private List<Tool> GetToolsFomPath(string toolsPath)
@@ -146,5 +172,14 @@ namespace dotnet_do
             }
         }
 
+        private IEnumerable<DirectoryInfo> EnumerateDirectoriesUp(DirectoryInfo directory)
+        {
+            var dir = directory;
+            do
+            {
+                yield return dir;
+                dir = dir.Parent;
+            } while (dir != null);
+        }
     }
 }
