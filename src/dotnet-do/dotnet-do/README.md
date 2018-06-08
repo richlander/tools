@@ -46,6 +46,16 @@ C:\git\tools\src\dotnet-do\dotnet-do>dotnet do print
 C:\git\tools\src\dotnet-do\dotnet-do\dotnet.tools
 C:\git\tools\src\dotnet.tools
 
+C:\git\tools\src\dotnet-do\dotnet-do>type C:\git\tools\src\dotnet-do\dotnet-do\dotnet.tools
+# Tool with version
+dotnetsay, 2.0.0
+
+# Tools without versions
+dx
+
+C:\git\tools\src\dotnet-do\dotnet-do>type C:\git\tools\src\dotnet.tools
+dotnet-serve
+
 C:\git\tools\src\dotnet-do\dotnet-do>dotnet do install
 Installing tools: 3
 Installing to: C:\git\tools\src\dotnet-do\dotnet-do
